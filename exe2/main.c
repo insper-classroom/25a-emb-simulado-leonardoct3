@@ -29,8 +29,7 @@ const int TRIGGER_PIN_1 = 13;
 const int ECHO_PIN_2 = 18;
 const int TRIGGER_PIN_2 = 19;
 
-volatile int trigged_1 = 0;
-volatile int trigged_2 = 0;
+
 
 
 bool timer_1_callback(repeating_timer_t *rt) {
@@ -64,18 +63,18 @@ void gpio_callback(uint gpio, uint32_t events) {
     }
 }
 
-void trigger_sensor_1() {
+void trigger_sensor_1(int *flag) {
     gpio_put(TRIGGER_PIN_1, 1);
     sleep_us(10);
     gpio_put(TRIGGER_PIN_1, 0);
-    trigged_1 = 1;
+    *flag = 1;
 }
 
-void trigger_sensor_2() {
+void trigger_sensor_2(int *flag) {
     gpio_put(TRIGGER_PIN_2, 1);
     sleep_us(10);
     gpio_put(TRIGGER_PIN_2, 0);
-    trigged_2 = 1;
+    *flag = 1;
 }
 
 
@@ -109,11 +108,14 @@ int main() {
 
     repeating_timer_t timer_1, timer_2;
 
+    int trigged_1 = 0;
+    int trigged_2 = 0;
+
     add_repeating_timer_ms(1000, timer_1_callback, NULL, &timer_1);
     add_repeating_timer_ms(1000, timer_2_callback, NULL, &timer_2);
 
-    trigger_sensor_1();
-    trigger_sensor_2();
+    trigger_sensor_1(&trigged_1);
+    trigger_sensor_2(&trigged_2);
     
     while (true) {
 
@@ -125,7 +127,7 @@ int main() {
 
                 if (!echo_flag_1) {
                     printf("Erro no sensor 1!\n");
-                    trigger_sensor_1();
+                    trigger_sensor_1(&trigged_1);
                     add_repeating_timer_ms(500, timer_1_callback, NULL, &timer_1);
                     continue;
                 }
@@ -137,7 +139,7 @@ int main() {
 
                 printf("Sensor 1 - dist: %d cm\n", distancia_1);
                 echo_flag_1 = 0;
-                trigger_sensor_1();
+                trigger_sensor_1(&trigged_1);
                 add_repeating_timer_ms(500, timer_1_callback, NULL, &timer_1);
             }
         }
@@ -150,7 +152,7 @@ int main() {
 
                 if (!echo_flag_2) {
                     printf("Erro no sensor 2!\n");
-                    trigger_sensor_1();
+                    trigger_sensor_2(&trigged_2);
                     add_repeating_timer_ms(500, timer_2_callback, NULL, &timer_2);
                     continue;
                 }
@@ -161,7 +163,7 @@ int main() {
 
                 printf("Sensor 2 - dist: %d cm\n", distancia_2);
                 echo_flag_2 = 0;
-                trigger_sensor_2();
+                trigger_sensor_2(&trigged_2);
                 add_repeating_timer_ms(500, timer_2_callback, NULL, &timer_2);
 
             }
